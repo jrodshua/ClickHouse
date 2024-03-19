@@ -20,7 +20,12 @@ from github.Repository import Repository
 
 # isort: on
 
-from ci_config import CHECK_DESCRIPTIONS, REQUIRED_CHECKS, CheckDescription
+from ci_config import (
+    CHECK_DESCRIPTIONS,
+    JOBS_REQUIRED_FOR_SYNC,
+    REQUIRED_CHECKS,
+    CheckDescription,
+)
 from env_helper import GITHUB_REPOSITORY, GITHUB_RUN_URL, TEMP_PATH
 from lambda_shared_package.lambda_shared.pr import Labels
 from pr_info import PRInfo
@@ -463,6 +468,42 @@ def trigger_mergeable_check(commit: Commit, statuses: CommitStatuses) -> None:
     """calculate and update MERGEABLE_NAME"""
     required_checks = [
         status for status in statuses if status.context in REQUIRED_CHECKS
+    ]
+
+    mergeable_status = None
+    for status in statuses:
+        if status.context == MERGEABLE_NAME:
+            mergeable_status = status
+            break
+
+    success = []
+    fail = []
+    for status in required_checks:
+        if status.state == SUCCESS:
+            success.append(status.context)
+        else:
+            fail.append(status.context)
+
+    state: StatusType = SUCCESS
+
+    if success:
+        description = ", ".join(success)
+    else:
+        description = "awaiting job statuses"
+
+    if fail:
+        description = "failed: " + ", ".join(fail)
+        state = FAILURE
+    description = format_description(description)
+
+    if mergeable_status is None or mergeable_status.description != description:
+        set_mergeable_check(commit, description, state)
+
+
+def trigger_a_sync_check(commit: Commit, statuses: CommitStatuses) -> None:
+    """calculate and update MERGEABLE_NAME"""
+    required_checks = [
+        status for status in statuses if status.context in JOBS_REQUIRED_FOR_SYNC
     ]
 
     mergeable_status = None

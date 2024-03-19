@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
 import logging
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, Iterable, List, Literal, Optional, Union
@@ -179,6 +179,11 @@ class JobNames(metaclass=WithIter):
 
     DOCS_CHECK = "Docs check"
     BUGFIX_VALIDATE = "Bugfix validation"
+
+
+JOBS_REQUIRED_FOR_SYNC = [
+    JobNames.BUILD_CHECK,
+]
 
 
 # dynamically update JobName with Build jobs
